@@ -501,6 +501,126 @@ app.get('/api/deployment/exec-stream/:token', (req, res) => {
   });
 });
 
+/* ── API Testing: custom endpoints persistence ── */
+const CUSTOM_APIS_FILE = path.join(__dirname, 'custom-apis.json');
+
+function loadCustomApis() {
+  try {
+    if (fs.existsSync(CUSTOM_APIS_FILE))
+      return JSON.parse(fs.readFileSync(CUSTOM_APIS_FILE, 'utf8'));
+  } catch (_) {}
+  return [];
+}
+
+function saveCustomApis(apis) {
+  fs.writeFileSync(CUSTOM_APIS_FILE, JSON.stringify(apis, null, 2), 'utf8');
+}
+
+app.get('/api/test/custom-apis', (req, res) => {
+  res.json({ success: true, apis: loadCustomApis() });
+});
+
+app.post('/api/test/custom-apis', (req, res) => {
+  const { label, method, path: apiPath, params } = req.body;
+  if (!label || !method || !apiPath)
+    return res.status(400).json({ success: false, error: 'label, method and path are required.' });
+
+  const apis = loadCustomApis();
+  const newApi = {
+    id:     'custom-' + crypto.randomUUID(),
+    label:  label.trim(),
+    method: method.toUpperCase(),
+    path:   apiPath.trim(),
+    params: Array.isArray(params) ? params : [],
+    custom: true
+  };
+  apis.push(newApi);
+  saveCustomApis(apis);
+  res.json({ success: true, api: newApi });
+});
+
+app.delete('/api/test/custom-apis/:id', (req, res) => {
+  const apis = loadCustomApis().filter(a => a.id !== req.params.id);
+  saveCustomApis(apis);
+  res.json({ success: true });
+});
+
+/* ── API Testing: run init (returns token) ── */
+app.post('/api/test/run-init', (req, res) => {
+  const { baseUrl, apis } = req.body;
+  if (!baseUrl)
+    return res.status(400).json({ success: false, error: 'baseUrl is required.' });
+  if (!Array.isArray(apis) || apis.length === 0)
+    return res.status(400).json({ success: false, error: 'No APIs selected.' });
+
+  const token = crypto.randomUUID();
+  replayJobs.set(token, { baseUrl, apis, createdAt: Date.now() });
+  setTimeout(() => replayJobs.delete(token), 120000);
+  res.json({ success: true, token });
+});
+
+/* ── API Testing: run stream ── */
+app.get('/api/test/run-stream/:token', async (req, res) => {
+  const job = replayJobs.get(req.params.token);
+  if (!job) { res.status(404).end(); return; }
+  replayJobs.delete(req.params.token);
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
+  const { baseUrl, apis } = job;
+  const base = baseUrl.replace(/\/$/, '');
+
+  for (let ai = 0; ai < apis.length; ai++) {
+    const api = apis[ai];
+
+    let urlPath = api.path;
+    if (Array.isArray(api.params)) {
+      api.params.forEach(p => {
+        urlPath = urlPath.replace(
+          new RegExp(`\\{\\{${p.name}\\}\\}`, 'g'),
+          encodeURIComponent(p.value || '')
+        );
+      });
+    }
+    const fullUrl = base + urlPath;
+
+    send({ type: 'api-start', index: ai, label: api.label, method: api.method, url: fullUrl });
+
+    const start = Date.now();
+    try {
+      const resp = await fetch(fullUrl, {
+        method: api.method,
+        headers: { 'Content-Type': 'application/json', ...(api.headers || {}) },
+        ...(api.body ? { body: JSON.stringify(api.body) } : {})
+      });
+      const ms = Date.now() - start;
+      let body = '';
+      try { body = await resp.text(); } catch (_) {}
+
+      send({
+        type: 'api-done', index: ai,
+        label: api.label, method: api.method, url: fullUrl,
+        status: resp.status, ok: resp.ok, ms,
+        body: body.slice(0, 2000)
+      });
+    } catch (err) {
+      send({
+        type: 'api-done', index: ai,
+        label: api.label, method: api.method, url: fullUrl,
+        status: 0, ok: false, ms: Date.now() - start,
+        error: err.message
+      });
+    }
+  }
+
+  send({ type: 'all-done', runAt: new Date().toISOString() });
+  res.end();
+});
+
 app.listen(PORT, () => {
   console.log(`DA Automation running at http://localhost:${PORT}`);
 });

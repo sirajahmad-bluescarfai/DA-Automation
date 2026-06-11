@@ -1187,6 +1187,242 @@
       font-weight: 600;
       color: var(--success);
     }
+
+    /* ── API Testing placeholder ── */
+    .api-placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: var(--text-muted);
+    }
+    .api-placeholder-icon  { font-size: 48px; line-height: 1; }
+    .api-placeholder-title { font-size: 18px; font-weight: 600; color: var(--text-dim); }
+    .api-placeholder-sub   { font-size: 13px; color: var(--text-muted); }
+
+    /* ── API Testing config bar ── */
+    .api-config-bar {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .api-config-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .api-config-row { display: flex; flex-direction: column; }
+    .api-config-row-split { flex-direction: row; gap: 10px; }
+    .api-config-row-split > div { flex: 1; }
+    .api-config-input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      outline: none;
+      transition: border-color 0.15s;
+      font-family: inherit;
+    }
+    .api-config-input:focus { border-color: var(--accent); }
+    .api-config-num { width: 100%; }
+
+    /* ── Auth panel ── */
+    .api-auth-toggle-row {
+      display: flex;
+      align-items: center;
+    }
+    .api-auth-toggle-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: var(--text-dim);
+      cursor: pointer;
+      user-select: none;
+    }
+    .api-auth-toggle-label input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+    .api-auth-panel {
+      background: rgba(47,129,247,0.05);
+      border: 1px solid rgba(47,129,247,0.2);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      animation: fadeIn 0.15s ease;
+    }
+
+    /* ── API Tree nodes ── */
+    .api-method-badge {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      letter-spacing: 0.3px;
+    }
+    .api-method-badge.get    { background: rgba(47,129,247,0.15);  color: #58a6ff; }
+    .api-method-badge.post   { background: rgba(63,185,80,0.15);   color: #3fb950; }
+    .api-method-badge.put    { background: rgba(210,153,34,0.15);  color: var(--warn); }
+    .api-method-badge.delete { background: rgba(248,81,73,0.1);    color: var(--danger); }
+
+    /* ── Param inputs inline in tree ── */
+    .api-param-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 6px 3px 46px;
+    }
+    .api-param-label {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .api-param-input {
+      flex: 1;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11.5px;
+      outline: none;
+      font-family: 'Courier New', monospace;
+      transition: border-color 0.15s;
+    }
+    .api-param-input:focus { border-color: var(--accent); }
+
+    /* ── Add custom form ── */
+    .api-add-row {
+      padding: 10px 16px;
+      font-size: 12px;
+      color: var(--accent);
+      cursor: pointer;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.1s;
+      flex-shrink: 0;
+    }
+    .api-add-row:hover { background: var(--surface2); }
+    .api-custom-form {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .api-cf-row { display: flex; }
+    .api-cf-split { gap: 8px; }
+    .api-cf-split .form-input { flex: 1; }
+    .api-method-select {
+      width: 80px;
+      flex-shrink: 0;
+      padding: 7px 6px;
+      cursor: pointer;
+    }
+    .api-cf-btns { display: flex; gap: 8px; }
+    .btn-api-save {
+      flex: 1;
+      background: var(--accent); color: #fff; border: none;
+      padding: 7px; border-radius: 6px; font-size: 12px;
+      font-weight: 600; cursor: pointer;
+      transition: background 0.1s;
+    }
+    .btn-api-save:hover { background: var(--accent-h); }
+    .btn-api-cancel {
+      flex: 1;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); padding: 7px; border-radius: 6px;
+      font-size: 12px; cursor: pointer;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    .btn-api-cancel:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ── API Results panel (replaces sidebar content after run) ── */
+    .api-result-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-size: 11.5px;
+    }
+    .api-result-top {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .api-result-label { flex: 1; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .api-result-status-ok   { color: var(--success); font-size: 13px; flex-shrink: 0; }
+    .api-result-status-err  { color: var(--danger);  font-size: 13px; flex-shrink: 0; }
+    .api-result-status-pend { color: var(--text-muted); font-size: 13px; flex-shrink: 0; }
+    .api-result-meta {
+      display: flex;
+      gap: 10px;
+      color: var(--text-muted);
+      font-size: 11px;
+      flex-wrap: wrap;
+    }
+    .api-result-meta span { display: flex; align-items: center; gap: 3px; }
+    .api-result-progress {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .api-result-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.2s;
+      width: 0%;
+    }
+    .api-result-progress-fill.done { background: var(--success); }
+    .api-result-progress-fill.err  { background: var(--danger); }
+
+    /* download report btn */
+    .btn-download-report {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      padding: 9px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    .btn-download-report:hover { border-color: var(--accent); color: var(--accent); }
   </style>
 </head>
 <body>
@@ -1207,6 +1443,10 @@
     <div class="nav-tile active" id="nav-pcap" onclick="switchView('pcap')">
       <span class="nav-tile-icon">📡</span>
       <span class="nav-tile-label">PCAP Replay</span>
+    </div>
+    <div class="nav-tile" id="nav-api" onclick="switchView('api')">
+      <span class="nav-tile-icon">🧪</span>
+      <span class="nav-tile-label">API Testing</span>
     </div>
   </nav>
 
@@ -1571,6 +1811,146 @@
   </div>
 
   </div><!-- end view-pcap -->
+
+  <!-- API Testing View -->
+  <div class="view" id="view-api">
+
+    <!-- Left: API Tree -->
+    <div class="tree-panel">
+      <div class="tree-toolbar">
+        <div class="search-wrap">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="text" class="search-input" id="api-search-input" placeholder="Search APIs…" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- Global config bar — base URL + auth -->
+      <div class="api-config-bar">
+        <div class="api-config-row">
+          <label class="api-config-label">Base URL</label>
+          <input type="text" id="api-base-url" class="api-config-input" placeholder="http://192.168.1.10:8080" autocomplete="off">
+        </div>
+        <div class="api-auth-toggle-row">
+          <label class="api-auth-toggle-label">
+            <input type="checkbox" id="api-auth-enabled" onchange="toggleAuthPanel()">
+            <span>Enable Auth</span>
+          </label>
+        </div>
+        <div class="api-auth-panel" id="api-auth-panel" style="display:none">
+          <div class="api-config-row-split" style="display:flex;gap:8px;margin-bottom:6px">
+            <div style="flex:0 0 100px">
+              <label class="api-config-label">Type</label>
+              <select id="api-auth-type" class="api-config-input" onchange="onAuthTypeChange()">
+                <option value="bearer">Bearer</option>
+                <option value="basic">Basic</option>
+                <option value="apikey">API Key</option>
+              </select>
+            </div>
+            <div style="flex:1" id="api-auth-token-wrap">
+              <label class="api-config-label">Token</label>
+              <div class="pass-wrap">
+                <input type="password" id="api-auth-token" class="api-config-input" placeholder="Enter token…" autocomplete="off">
+                <button class="pass-eye" onclick="toggleAuthEye()" title="Show/hide">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Basic auth fields (hidden unless type=basic) -->
+          <div id="api-auth-basic-wrap" style="display:none">
+            <div style="display:flex;gap:8px">
+              <div style="flex:1">
+                <label class="api-config-label">Username</label>
+                <input type="text" id="api-auth-user" class="api-config-input" placeholder="username" autocomplete="off">
+              </div>
+              <div style="flex:1">
+                <label class="api-config-label">Password</label>
+                <div class="pass-wrap">
+                  <input type="password" id="api-auth-pass" class="api-config-input" placeholder="password">
+                  <button class="pass-eye" onclick="toggleAuthPassEye()" title="Show/hide">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- API Key fields (hidden unless type=apikey) -->
+          <div id="api-auth-apikey-wrap" style="display:none">
+            <div style="display:flex;gap:8px">
+              <div style="flex:0 0 130px">
+                <label class="api-config-label">Header Name</label>
+                <input type="text" id="api-auth-key-name" class="api-config-input" placeholder="X-API-Key" value="X-API-Key">
+              </div>
+              <div style="flex:1">
+                <label class="api-config-label">Value</label>
+                <div class="pass-wrap">
+                  <input type="password" id="api-auth-key-val" class="api-config-input" placeholder="key value">
+                  <button class="pass-eye" onclick="toggleAuthKeyEye()" title="Show/hide">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- API tree scroll -->
+      <div class="tree-scroll" id="api-tree-root"></div>
+
+      <!-- Add custom API row -->
+      <div class="api-add-row" id="api-add-toggle" onclick="toggleAddCustomApi()">
+        <span>＋</span> Add Custom API
+      </div>
+      <div class="api-custom-form" id="api-custom-form" style="display:none">
+        <div class="api-cf-row">
+          <input type="text" class="form-input" id="cf-label" placeholder="Label (e.g. Get User)">
+        </div>
+        <div class="api-cf-row api-cf-split">
+          <select id="cf-method" class="form-input api-method-select">
+            <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+          </select>
+          <input type="text" class="form-input" id="cf-path" placeholder="/endpoint?id={{id}}">
+        </div>
+        <div class="api-cf-row">
+          <input type="text" class="form-input" id="cf-params" placeholder='Params: name1,name2 (match {{}} in path)'>
+        </div>
+        <div class="api-cf-btns">
+          <button class="btn-api-save" onclick="saveCustomApi()">Save</button>
+          <button class="btn-api-cancel" onclick="cancelAddCustomApi()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Selected + Actions + Results -->
+    <div class="sidebar" style="width:340px">
+      <div class="sb-header">
+        <div class="sb-header-top">
+          <span class="sb-title">Selected APIs</span>
+          <button class="sb-clear-btn" id="api-clear-btn">Clear all</button>
+        </div>
+        <div class="sb-counter" id="api-sb-count">0</div>
+        <div class="sb-counter-label" id="api-sb-label">apis selected</div>
+      </div>
+
+      <div class="sb-list" id="api-sb-list">
+        <div class="sb-empty">
+          <div class="sb-empty-icon">🌐</div>
+          Select APIs from the tree to add them to the test queue
+        </div>
+      </div>
+
+      <div class="sb-actions">
+        <button class="btn-replay" id="api-run-btn" disabled>
+          <span>▶</span> Run Selected
+        </button>
+        <button class="btn-deselect" id="api-deselect-btn">Deselect All</button>
+      </div>
+    </div>
+
+  </div><!-- end view-api -->
 </div><!-- end layout -->
 
 <div class="statusbar">
@@ -2715,6 +3095,683 @@
     const ok = await runBuildStep(BUILD_STEPS[idx]);
     if (ok) runFromStep(idx + 1);
   };
+
+  /* ══════════════════════════════════════════
+     API TESTING
+  ══════════════════════════════════════════ */
+
+  /* ── Static API definitions ── */
+  const STATIC_APIS = [
+    {
+      group: 'Auth',
+      icon: '🔐',
+      apis: []  // will be populated in a future phase
+    },
+    {
+      group: 'CDR',
+      icon: '📋',
+      apis: [
+        {
+          id: 'cdr-list-offset',
+          label: 'List CDRs (offset/size)',
+          method: 'GET',
+          path: '/calls?offset={{offset}}&size={{size}}',
+          params: [
+            { name: 'offset', value: '' },
+            { name: 'size',   value: '' }
+          ]
+        },
+        {
+          id: 'cdr-get-by-cdrid',
+          label: 'Get CDR by ID',
+          method: 'GET',
+          path: '/callsByCDRID/?cdrId={{cdrId}}',
+          params: [{ name: 'cdrId', value: '' }]
+        },
+        {
+          id: 'cdr-get-by-time',
+          label: 'Get CDRs by Time',
+          method: 'GET',
+          path: '/callsByTime?start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'cdr-get-by-msisdn',
+          label: 'Get CDRs by MSISDN',
+          method: 'GET',
+          path: '/callsByMsisdn?msisdn={{msisdn}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'msisdn',     value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'cdr-get-by-cellid',
+          label: 'Get CDRs by Cell-ID',
+          method: 'GET',
+          path: '/callsByCellId?searchId={{searchId}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'searchId',   value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'cdr-get-by-callid',
+          label: 'Get CDR by Call-ID',
+          method: 'GET',
+          path: '/cdrByCallId?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        },
+        {
+          id: 'cdr-get-last-id',
+          label: 'Get Last CDR ID',
+          method: 'GET',
+          path: '/lastCdrId?time={{time}}',
+          params: [{ name: 'time', value: '' }]
+        }
+      ]
+    },
+    {
+      group: 'PCAPs',
+      icon: '📡',
+      apis: [
+        {
+          id: 'pcap-get-by-cdrid',
+          label: 'Get PCAP by CDR ID',
+          method: 'GET',
+          path: '/pcap?id={{cdrId}}&disable_rtp={{disable_rtp}}',
+          params: [
+            { name: 'cdrId',       value: '' },
+            { name: 'disable_rtp', value: '' }
+          ]
+        }
+      ]
+    },
+    {
+      group: 'Audio',
+      icon: '🎵',
+      apis: [
+        {
+          id: 'audio-get-by-cdrid',
+          label: 'Get Audio by CDR ID',
+          method: 'GET',
+          path: '/audio/{{cdrId}}',
+          params: [{ name: 'cdrId', value: '' }]
+        },
+        {
+          id: 'audio-get-by-callid',
+          label: 'Get Audio by Call-ID',
+          method: 'GET',
+          path: '/getVoiceRecording?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        },
+        {
+          id: 'audio-dummy-by-cdrid',
+          label: 'Get Dummy Audio by CDR ID',
+          method: 'GET',
+          path: '/dummyAudio/{{cdrId}}',
+          params: [{ name: 'cdrId', value: '' }]
+        }
+      ]
+    },
+    {
+      group: 'Conference',
+      icon: '👥',
+      apis: [
+        {
+          id: 'conf-get-details',
+          label: 'Get Conference Details',
+          method: 'GET',
+          path: '/getConfDetails?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        },
+        {
+          id: 'conf-get-main-cdr',
+          label: 'Get Main Conference CDR',
+          method: 'GET',
+          path: '/getConfCall?referredBy={{referredBy}}&referTime={{referTime}}',
+          params: [
+            { name: 'referredBy', value: '' },
+            { name: 'referTime',  value: '' }
+          ]
+        }
+      ]
+    },
+    {
+      group: 'SRVCC',
+      icon: '🔄',
+      apis: [
+        {
+          id: 'srvcc-get-pre-leg',
+          label: 'Get Pre-SRVCC Call Leg',
+          method: 'GET',
+          path: '/getPreSrvccLeg?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        },
+        {
+          id: 'srvcc-get-post-leg',
+          label: 'Get Post-SRVCC Call Leg',
+          method: 'GET',
+          path: '/getPostSrvccLeg?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        }
+      ]
+    },
+    {
+      group: 'Data by MSISDN',
+      icon: '📦',
+      apis: [
+        {
+          id: 'data-msisdn-post',
+          label: 'Start Data Job (POST)',
+          method: 'POST',
+          path: '/dataByMsisdn?msisdn={{msisdn}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'msisdn',     value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'data-msisdn-get',
+          label: 'Check Data Job Status (GET)',
+          method: 'GET',
+          path: '/dataByMsisdn?id={{task_id}}',
+          params: [{ name: 'task_id', value: '' }]
+        },
+        {
+          id: 'data-msisdn-dummy-post',
+          label: 'Start Dummy Data Job (POST)',
+          method: 'POST',
+          path: '/dummyDataByMsisdn?msisdn={{msisdn}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'msisdn',     value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'data-msisdn-dummy-get',
+          label: 'Check Dummy Data Job Status (GET)',
+          method: 'GET',
+          path: '/dummyDataByMsisdn?id={{task_id}}',
+          params: [{ name: 'task_id', value: '' }]
+        }
+      ]
+    }
+  ];
+
+  let apiSelectedIds  = new Set();
+  let apiParamValues  = {};   // { apiId: { paramName: value } }
+  let apiCustomList   = [];
+  let apiRunResults   = [];
+  let apiRunAt        = null;
+  let activeApiEs     = null;
+
+  /* ── Load custom APIs from server ── */
+  async function loadApiCustom() {
+    try {
+      const r = await fetch('/api/test/custom-apis');
+      const d = await r.json();
+      if (d.success) apiCustomList = d.apis;
+    } catch (_) {}
+    renderApiTree();
+  }
+
+  /* ── Build flat list of all APIs ── */
+  function getAllApiGroups() {
+    const groups = STATIC_APIS.map(g => ({ ...g, apis: [...g.apis] }));
+    if (apiCustomList.length > 0) {
+      groups.push({ group: 'Custom', icon: '✏️', apis: apiCustomList });
+    }
+    return groups;
+  }
+
+  /* ── Render API tree ── */
+  function renderApiTree(filter = '') {
+    const root = document.getElementById('api-tree-root');
+    const ql   = filter.toLowerCase();
+    const groups = getAllApiGroups();
+    root.innerHTML = '';
+
+    groups.forEach(group => {
+      const visibleApis = group.apis.filter(a =>
+        !ql || a.label.toLowerCase().includes(ql) || a.path.toLowerCase().includes(ql)
+      );
+      if (visibleApis.length === 0 && group.group !== 'Auth') return;
+
+      // Group header row
+      const gNode = document.createElement('div');
+      gNode.className = 't-node';
+
+      const nid = 'apig-' + group.group.toLowerCase();
+      gNode.innerHTML = `
+        <div class="t-row" data-type="dir" data-node-id="${nid}">
+          <span class="t-toggle open" data-toggle="${nid}">▶</span>
+          <input type="checkbox" class="t-check" data-api-group="${nid}">
+          <span class="t-icon">${group.icon}</span>
+          <span class="t-name is-dir">${esc(group.group)}</span>
+          <span class="t-badge">${visibleApis.length}</span>
+        </div>
+        <div class="t-children" id="ch-${nid}">
+        </div>
+      `;
+      root.appendChild(gNode);
+
+      const childrenEl = gNode.querySelector('.t-children');
+
+      if (visibleApis.length === 0) {
+        childrenEl.innerHTML = `<div style="padding:6px 6px 6px 46px;font-size:11.5px;color:var(--text-muted);font-style:italic">No APIs yet — coming soon</div>`;
+        return;
+      }
+
+      visibleApis.forEach(api => {
+        const aNode = document.createElement('div');
+        aNode.className = 't-node t-file-node';
+
+        const methodCls = api.method.toLowerCase();
+        const isChecked = apiSelectedIds.has(api.id);
+        const vals = apiParamValues[api.id] || {};
+
+        const paramInputs = (api.params || []).map(p => `
+          <div class="api-param-row">
+            <span class="api-param-label">{{${esc(p.name)}}}:</span>
+            <input type="text"
+              class="api-param-input"
+              data-api-id="${esc(api.id)}"
+              data-param="${esc(p.name)}"
+              value="${esc(vals[p.name] || '')}"
+              placeholder="${esc(p.name)}"
+              onclick="event.stopPropagation()">
+          </div>
+        `).join('');
+
+        const deleteBtn = api.custom
+          ? `<button class="t-badge" style="cursor:pointer;background:transparent;border:none;color:var(--danger)" onclick="deleteCustomApi('${esc(api.id)}',event)" title="Delete">✕</button>`
+          : '';
+
+        aNode.innerHTML = `
+          <div class="t-row is-file" data-type="api" data-api-id="${esc(api.id)}">
+            <span class="t-toggle leaf">▶</span>
+            <input type="checkbox" class="t-check" data-api-id="${esc(api.id)}" ${isChecked ? 'checked' : ''}>
+            <span class="t-icon">🌐</span>
+            <span class="t-name is-file" style="flex:1;min-width:0">
+              <span class="api-method-badge ${methodCls}">${esc(api.method)}</span>
+              &nbsp;${esc(api.label)}
+            </span>
+            ${deleteBtn}
+          </div>
+          ${paramInputs}
+        `;
+        childrenEl.appendChild(aNode);
+      });
+    });
+
+    syncApiGroupCheckboxes();
+  }
+
+  /* ── Tree interaction ── */
+  document.getElementById('api-tree-root').addEventListener('change', e => {
+    if (!e.target.classList.contains('t-check')) return;
+    const cb = e.target;
+
+    if (cb.dataset.apiId) {
+      if (cb.checked) apiSelectedIds.add(cb.dataset.apiId);
+      else            apiSelectedIds.delete(cb.dataset.apiId);
+      syncApiGroupCheckboxes();
+      renderApiSidebar();
+    } else if (cb.dataset.apiGroup) {
+      // group checkbox — toggle all in group
+      const children = cb.closest('.t-node')
+        .querySelectorAll('.t-check[data-api-id]');
+      children.forEach(c => {
+        if (cb.checked) apiSelectedIds.add(c.dataset.apiId);
+        else            apiSelectedIds.delete(c.dataset.apiId);
+        c.checked = cb.checked;
+      });
+      renderApiSidebar();
+    }
+  });
+
+  document.getElementById('api-tree-root').addEventListener('click', e => {
+    // toggle expand/collapse
+    const toggleEl = e.target.closest('[data-toggle]');
+    if (toggleEl && !toggleEl.classList.contains('leaf')) {
+      e.stopPropagation();
+      const ch = document.getElementById('ch-' + toggleEl.dataset.toggle);
+      const open = toggleEl.classList.contains('open');
+      if (ch) ch.style.display = open ? 'none' : '';
+      toggleEl.classList.toggle('open', !open);
+    }
+
+    // row click on API item selects it
+    const row = e.target.closest('.t-row[data-type="api"]');
+    if (row && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+      const id = row.dataset.apiId;
+      const cb = row.querySelector('.t-check');
+      if (apiSelectedIds.has(id)) { apiSelectedIds.delete(id); cb.checked = false; }
+      else                         { apiSelectedIds.add(id);    cb.checked = true;  }
+      syncApiGroupCheckboxes();
+      renderApiSidebar();
+    }
+  });
+
+  // Param value changes
+  document.getElementById('api-tree-root').addEventListener('input', e => {
+    const inp = e.target;
+    if (!inp.classList.contains('api-param-input')) return;
+    const { apiId, param } = inp.dataset;
+    if (!apiParamValues[apiId]) apiParamValues[apiId] = {};
+    apiParamValues[apiId][param] = inp.value;
+  });
+
+  function syncApiGroupCheckboxes() {
+    document.querySelectorAll('.t-check[data-api-group]').forEach(gcb => {
+      const children = gcb.closest('.t-node').querySelectorAll('.t-check[data-api-id]');
+      const total = children.length;
+      const sel   = [...children].filter(c => apiSelectedIds.has(c.dataset.apiId)).length;
+      gcb.indeterminate = sel > 0 && sel < total;
+      gcb.checked       = total > 0 && sel === total;
+    });
+  }
+
+  /* ── Sidebar render ── */
+  function renderApiSidebar() {
+    const n = apiSelectedIds.size;
+    document.getElementById('api-sb-count').textContent = n;
+    document.getElementById('api-sb-label').textContent = n === 1 ? 'api selected' : 'apis selected';
+    document.getElementById('api-run-btn').disabled = n === 0;
+
+    if (n === 0) {
+      document.getElementById('api-sb-list').innerHTML = `
+        <div class="sb-empty">
+          <div class="sb-empty-icon">🌐</div>
+          Select APIs from the tree to add them to the test queue
+        </div>`;
+      return;
+    }
+
+    const all = getAllApiGroups().flatMap(g => g.apis);
+    const selected = [...apiSelectedIds].map(id => all.find(a => a.id === id)).filter(Boolean);
+
+    const byGroup = {};
+    selected.forEach(api => {
+      const grp = getAllApiGroups().find(g => g.apis.some(a => a.id === api.id));
+      const key = grp ? grp.group : 'Custom';
+      if (!byGroup[key]) byGroup[key] = [];
+      byGroup[key].push(api);
+    });
+
+    document.getElementById('api-sb-list').innerHTML = Object.entries(byGroup).map(([g, apis]) => `
+      <div class="sb-group">
+        <div class="sb-group-title">
+          <span>${esc(g)}</span>
+          <span class="sb-group-count">${apis.length}</span>
+        </div>
+        ${apis.map(a => `
+          <div class="sb-file">
+            <span class="api-method-badge ${a.method.toLowerCase()}" style="margin-top:1px">${esc(a.method)}</span>
+            ${esc(a.label)}
+          </div>`).join('')}
+      </div>
+    `).join('');
+  }
+
+  /* ── Clear / Deselect ── */
+  document.getElementById('api-clear-btn').addEventListener('click', () => {
+    apiSelectedIds.clear();
+    renderApiTree();
+    renderApiSidebar();
+  });
+  document.getElementById('api-deselect-btn').addEventListener('click', () => {
+    apiSelectedIds.clear();
+    renderApiTree();
+    renderApiSidebar();
+  });
+
+  /* ── Search ── */
+  document.getElementById('api-search-input').addEventListener('input', e => {
+    renderApiTree(e.target.value.trim());
+  });
+
+  /* ── Custom API form ── */
+  window.toggleAddCustomApi = () => {
+    const f = document.getElementById('api-custom-form');
+    f.style.display = f.style.display === 'none' ? 'flex' : 'none';
+  };
+  window.cancelAddCustomApi = () => {
+    document.getElementById('api-custom-form').style.display = 'none';
+    ['cf-label','cf-path','cf-params'].forEach(id => document.getElementById(id).value = '');
+  };
+  window.saveCustomApi = async () => {
+    const label  = document.getElementById('cf-label').value.trim();
+    const method = document.getElementById('cf-method').value;
+    const path   = document.getElementById('cf-path').value.trim();
+    const rawParams = document.getElementById('cf-params').value.trim();
+    if (!label || !path) { showToast('Label and path are required.'); return; }
+
+    const params = rawParams
+      ? rawParams.split(',').map(s => ({ name: s.trim(), value: '' })).filter(p => p.name)
+      : [];
+
+    try {
+      const r = await fetch('/api/test/custom-apis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label, method, path, params })
+      });
+      const d = await r.json();
+      if (d.success) {
+        apiCustomList.push(d.api);
+        window.cancelAddCustomApi();
+        renderApiTree();
+        showToast('Custom API saved.');
+      }
+    } catch (_) { showToast('Failed to save custom API.'); }
+  };
+
+  window.deleteCustomApi = async (id, e) => {
+    e.stopPropagation();
+    try {
+      await fetch('/api/test/custom-apis/' + id, { method: 'DELETE' });
+      apiCustomList = apiCustomList.filter(a => a.id !== id);
+      apiSelectedIds.delete(id);
+      renderApiTree();
+      renderApiSidebar();
+    } catch (_) {}
+  };
+
+  /* ── Auth panel controls ── */
+  window.toggleAuthPanel = () => {
+    const enabled = document.getElementById('api-auth-enabled').checked;
+    document.getElementById('api-auth-panel').style.display = enabled ? 'flex' : 'none';
+    if (enabled) document.getElementById('api-auth-panel').style.flexDirection = 'column';
+  };
+
+  window.onAuthTypeChange = () => {
+    const type = document.getElementById('api-auth-type').value;
+    document.getElementById('api-auth-token-wrap').style.display  = type === 'bearer' ? 'flex' : 'none';
+    document.getElementById('api-auth-basic-wrap').style.display  = type === 'basic'  ? 'block' : 'none';
+    document.getElementById('api-auth-apikey-wrap').style.display = type === 'apikey' ? 'block' : 'none';
+  };
+
+  window.toggleAuthEye     = () => { const i = document.getElementById('api-auth-token');   i.type = i.type === 'password' ? 'text' : 'password'; };
+  window.toggleAuthPassEye = () => { const i = document.getElementById('api-auth-pass');    i.type = i.type === 'password' ? 'text' : 'password'; };
+  window.toggleAuthKeyEye  = () => { const i = document.getElementById('api-auth-key-val'); i.type = i.type === 'password' ? 'text' : 'password'; };
+
+  function buildAuthHeader() {
+    if (!document.getElementById('api-auth-enabled').checked) return {};
+    const type = document.getElementById('api-auth-type').value;
+
+    if (type === 'bearer') {
+      const token = document.getElementById('api-auth-token').value.trim();
+      if (!token) return {};
+      return { Authorization: `Bearer ${token}` };
+    }
+    if (type === 'basic') {
+      const user = document.getElementById('api-auth-user').value.trim();
+      const pass = document.getElementById('api-auth-pass').value;
+      if (!user) return {};
+      return { Authorization: `Basic ${btoa(user + ':' + pass)}` };
+    }
+    if (type === 'apikey') {
+      const name = document.getElementById('api-auth-key-name').value.trim() || 'X-API-Key';
+      const val  = document.getElementById('api-auth-key-val').value.trim();
+      if (!val) return {};
+      return { [name]: val };
+    }
+    return {};
+  }
+
+  /* ── Run Tests ── */
+  function buildRunPayload() {
+    const baseUrl    = document.getElementById('api-base-url').value.trim();
+    const authHeader = buildAuthHeader();
+    const all        = getAllApiGroups().flatMap(g => g.apis);
+    const apis       = [...apiSelectedIds].map(id => {
+      const api  = all.find(a => a.id === id);
+      if (!api) return null;
+      const vals = apiParamValues[id] || {};
+      return {
+        ...api,
+        headers: authHeader,
+        params: (api.params || []).map(p => ({ ...p, value: vals[p.name] || p.value || '' }))
+      };
+    }).filter(Boolean);
+
+    return { baseUrl, apis };
+  }
+
+  document.getElementById('api-run-btn').addEventListener('click', () => {
+    if (apiSelectedIds.size === 0) return;
+    const payload = buildRunPayload();
+    if (!payload.baseUrl) { showToast('Please enter a Base URL.'); return; }
+    startApiRun(payload);
+  });
+
+  function startApiRun(payload) {
+    if (activeApiEs) { activeApiEs.close(); activeApiEs = null; }
+
+    apiRunResults = payload.apis.map(a => ({
+      id: a.id, label: a.label, method: a.method,
+      url: payload.baseUrl.replace(/\/$/, '') + a.path,
+      status: null, ok: null, ms: null, body: null, error: null,
+      state: 'pending'
+    }));
+    apiRunAt = null;
+
+    renderApiResults();
+    document.getElementById('api-run-btn').disabled = true;
+
+    // Step 1 — init: POST payload, get token
+    fetch('/api/test/run-init', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (!data.success) {
+        showToast('Error: ' + (data.error || 'Could not start run.'));
+        document.getElementById('api-run-btn').disabled = apiSelectedIds.size === 0;
+        return;
+      }
+      // Step 2 — open EventSource stream with token
+      const es = new EventSource(`/api/test/run-stream/${data.token}`);
+      activeApiEs = es;
+
+      es.onmessage = (e) => {
+        try { handleApiEvent(JSON.parse(e.data)); } catch (_) {}
+      };
+
+      es.onerror = () => {
+        es.close(); activeApiEs = null;
+        document.getElementById('api-run-btn').disabled = apiSelectedIds.size === 0;
+      };
+    })
+    .catch(err => {
+      console.error('run-init error:', err);
+      showToast('Failed to connect to test runner: ' + err.message);
+      document.getElementById('api-run-btn').disabled = apiSelectedIds.size === 0;
+    });
+  }
+
+  function handleApiEvent(msg) {
+    if (msg.type === 'api-start') {
+      apiRunResults[msg.index].state = 'running';
+      apiRunResults[msg.index].url   = msg.url;
+      renderApiResults();
+    }
+    if (msg.type === 'api-done') {
+      const r    = apiRunResults[msg.index];
+      r.state    = msg.ok ? 'done' : 'error';
+      r.status   = msg.status;
+      r.ok       = msg.ok;
+      r.ms       = msg.ms;
+      r.body     = msg.body   || null;
+      r.error    = msg.error  || null;
+      r.url      = msg.url;
+      renderApiResults();
+    }
+    if (msg.type === 'all-done') {
+      if (activeApiEs) { activeApiEs.close(); activeApiEs = null; }
+      apiRunAt = msg.runAt;
+      document.getElementById('api-run-btn').disabled = apiSelectedIds.size === 0;
+      renderApiResults();
+    }
+  }
+
+  function renderApiResults() {
+    const list = document.getElementById('api-sb-list');
+    if (!apiRunResults.length) return;
+
+    list.innerHTML = apiRunResults.map(r => {
+      const icon = r.state === 'pending'
+        ? '<span class="api-result-status-pend">⏳</span>'
+        : r.state === 'running'
+        ? '<div class="spinner" style="width:13px;height:13px;border-width:2px;flex-shrink:0"></div>'
+        : r.ok
+        ? '<span class="api-result-status-ok">✓</span>'
+        : '<span class="api-result-status-err">✗</span>';
+
+      const statusBadge = r.status != null
+        ? `<span style="font-size:10.5px;padding:1px 7px;border-radius:8px;font-weight:600;
+            background:${r.ok ? 'rgba(63,185,80,0.15)' : 'rgba(248,81,73,0.12)'};
+            color:${r.ok ? 'var(--success)' : 'var(--danger)'}">
+            ${r.status}
+           </span>`
+        : '';
+
+      const meta = r.ms != null
+        ? `<span style="font-size:10.5px;color:var(--text-muted)">${r.ms}ms</span>`
+        : '';
+
+      // Response body preview — shown after completion
+      const bodyPreview = (r.state === 'done' || r.state === 'error') && (r.body || r.error)
+        ? `<pre class="bcmd-out" style="margin:4px 0 0;max-height:140px;font-size:10.5px">${esc(r.error || r.body)}</pre>`
+        : '';
+
+      return `
+        <div class="api-result-item" style="margin-bottom:6px">
+          <div class="api-result-top">
+            ${icon}
+            <span class="api-method-badge ${r.method.toLowerCase()}">${esc(r.method)}</span>
+            <span class="api-result-label">${esc(r.label)}</span>
+            ${statusBadge}
+            ${meta}
+          </div>
+          ${bodyPreview}
+        </div>`;
+    }).join('');
+  }
+
+  /* ── Init ── */
+  loadApiCustom();
 
   /* ── Nav switching ── */
   window.switchView = (view) => {
