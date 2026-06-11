@@ -326,6 +326,19 @@
     .btn-replay:disabled { opacity: 0.35; cursor: not-allowed; }
     .btn-replay.running { background: var(--warn); }
 
+    .btn-replay-concurrent {
+      background: #1a3a2a;
+      border: 1px solid #2ea043;
+      color: #3fb950;
+    }
+    .btn-replay-concurrent:hover:not(:disabled) {
+      background: #1f4d35;
+      border-color: #3fb950;
+      color: #58d168;
+    }
+    .btn-replay-concurrent:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-replay-concurrent.running  { background: #3a2a00; border-color: var(--warn); color: var(--warn); }
+
     .btn-deselect {
       width: 100%;
       background: transparent;
@@ -1550,6 +1563,9 @@
       <button class="btn-replay" id="replay-btn" disabled>
         <span>▶</span> Replay Selected
       </button>
+      <button class="btn-replay btn-replay-concurrent" id="replay-concurrent-btn" disabled>
+        <span>⚡</span> Replay Concurrent
+      </button>
       <button class="btn-deselect" id="deselect-btn">Deselect All</button>
     </div>
   </div>
@@ -1689,7 +1705,8 @@
   const sbCount     = document.getElementById('sb-count');
   const sbLabel     = document.getElementById('sb-label');
   const sbList      = document.getElementById('sb-list');
-  const replayBtn   = document.getElementById('replay-btn');
+  const replayBtn           = document.getElementById('replay-btn');
+  const replayConcurrentBtn = document.getElementById('replay-concurrent-btn');
   const clearBtn    = document.getElementById('clear-btn');
   const deselectBtn = document.getElementById('deselect-btn');
   const totalBadge  = document.getElementById('total-badge');
@@ -1874,6 +1891,7 @@
     sbLabel.textContent = n === 1 ? 'file selected' : 'files selected';
     statusSel.textContent = `${n} selected`;
     replayBtn.disabled = n === 0;
+    replayConcurrentBtn.disabled = n === 0;
 
     if (n === 0) {
       sbList.innerHTML = `
@@ -1977,11 +1995,23 @@
   /* ── Replay ── */
   replayBtn.addEventListener('click', () => {
     if (selectedFiles.size === 0) return;
-    openReplayModal();
+    openReplayModal('sequential');
+  });
+
+  replayConcurrentBtn.addEventListener('click', () => {
+    if (selectedFiles.size === 0) return;
+    openReplayModal('concurrent');
   });
 
   /* ── Replay Config Modal ── */
-  function openReplayModal() {
+  let replayMode = 'sequential';
+
+  function openReplayModal(mode = 'sequential') {
+    replayMode = mode;
+    const title = mode === 'concurrent'
+      ? '⚡ PCAP Concurrent Replay Configuration'
+      : '▶ PCAP Replay Configuration';
+    document.getElementById('rc-modal-title').textContent = title;
     document.getElementById('replay-modal-overlay').classList.add('open');
     document.getElementById('rc-error').classList.remove('visible');
     document.getElementById('rc-client-ip').focus();
@@ -2064,7 +2094,7 @@
         return;
       }
 
-      await doReplay([...selectedFiles], client, server);
+      await doReplay([...selectedFiles], client, server, replayMode);
 
     } catch (_) {
       errText.textContent = 'Network error — could not reach the automation server.';
@@ -2075,9 +2105,10 @@
     }
   };
 
-  async function doReplay(files, client, server) {
+  async function doReplay(files, client, server, mode = 'sequential') {
     // Switch modal to progress view
-    document.getElementById('rc-modal-title').textContent       = '▶ Replaying PCAPs…';
+    const modeLabel = mode === 'concurrent' ? '⚡ Replaying Concurrently…' : '▶ Replaying PCAPs…';
+    document.getElementById('rc-modal-title').textContent       = modeLabel;
     document.getElementById('rc-config-section').style.display  = 'none';
     document.getElementById('rc-progress-section').style.display = '';
     document.getElementById('rc-all-done').style.display        = 'none';
@@ -2107,7 +2138,7 @@
       const r = await fetch('/api/replay/start-init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files, client, server })
+        body: JSON.stringify({ files, client, server, mode })
       });
       initData = await r.json();
     } catch (_) {

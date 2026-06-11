@@ -149,14 +149,14 @@ app.post('/api/replay/check-services', async (req, res) => {
 const replayJobs = new Map();
 
 app.post('/api/replay/start-init', (req, res) => {
-  const { files, client } = req.body;
+  const { files, client, mode = 'sequential' } = req.body;
   if (!Array.isArray(files) || files.length === 0)
     return res.status(400).json({ success: false, error: 'No files provided.' });
   if (!client?.ip || !client?.username || !client?.password || !client?.interfaceName)
     return res.status(400).json({ success: false, error: 'Client connection details required.' });
 
   const token = crypto.randomUUID();
-  replayJobs.set(token, { files, client, createdAt: Date.now() });
+  replayJobs.set(token, { files, client, mode, createdAt: Date.now() });
   setTimeout(() => replayJobs.delete(token), 120000);
   res.json({ success: true, token });
 });
@@ -172,7 +172,7 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
   res.flushHeaders();
 
   const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
-  const { files, client } = job;
+  const { files, client, mode } = job;
 
   const conn = new Client();
   let clientClosed = false;
@@ -193,57 +193,111 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
     return;
   }
 
-  for (let i = 0; i < files.length; i++) {
-    if (clientClosed) break;
+  /* ── helpers ── */
 
-    const filePath  = files[i];
+  // Upload a single file via SFTP, returns remote tmp path or null on error
+  function uploadFile(i, filePath) {
     const fileName  = path.basename(filePath);
     const localPath = path.join(__dirname, filePath);
-    const remoteTmp = `/tmp/dareplay_${Date.now()}_${fileName}`;
+    const remoteTmp = `/tmp/dareplay_${Date.now()}_${i}_${fileName}`;
 
     send({ type: 'file-status', index: i, status: 'uploading' });
 
-    const uploaded = await new Promise((resolve) => {
+    return new Promise((resolve) => {
       conn.sftp((err, sftp) => {
         if (err) {
           send({ type: 'file-status', index: i, status: 'error', error: 'SFTP: ' + err.message });
-          return resolve(false);
+          return resolve(null);
         }
         const rs = fs.createReadStream(localPath);
         const ws = sftp.createWriteStream(remoteTmp);
-        ws.on('close', () => resolve(true));
+        ws.on('close', () => resolve(remoteTmp));
         ws.on('error', (e) => {
           send({ type: 'file-status', index: i, status: 'error', error: 'Upload failed: ' + e.message });
-          resolve(false);
+          resolve(null);
         });
         rs.on('error', (e) => {
           send({ type: 'file-status', index: i, status: 'error', error: 'File read error: ' + e.message });
-          resolve(false);
+          resolve(null);
         });
         rs.pipe(ws);
       });
     });
+  }
 
-    if (!uploaded || clientClosed) continue;
-
+  // Run tcpreplay on an already-uploaded remote file
+  function replayFile(i, remoteTmp) {
     send({ type: 'file-status', index: i, status: 'replaying' });
 
-    await new Promise((resolve) => {
-      const cmd = `tcpreplay -i "${client.interfaceName}" "${remoteTmp}"; rm -f "${remoteTmp}"`;
+    return new Promise((resolve) => {
+      const cmd = `tcpreplay -i "${client.interfaceName}" "${remoteTmp}"; RC=$?; rm -f "${remoteTmp}"; exit $RC`;
       conn.exec(cmd, (err, stream) => {
         if (err) {
           send({ type: 'file-status', index: i, status: 'error', error: err.message });
           return resolve();
         }
+
+        let stdOut = '';
         let errOut = '';
-        stream.stderr.on('data', d => errOut += d.toString());
+        stream.on('data', d => { stdOut += d.toString(); });
+        stream.stderr.on('data', d => { errOut += d.toString(); });
+
+        const timeout = setTimeout(() => {
+          send({ type: 'file-status', index: i, status: 'error', error: 'Timed out after 5 minutes.' });
+          try { stream.close(); } catch (_) {}
+          resolve();
+        }, 5 * 60 * 1000);
+
         stream.on('close', (code) => {
-          if (code === 0) send({ type: 'file-status', index: i, status: 'done' });
-          else            send({ type: 'file-status', index: i, status: 'error', error: errOut.trim() || `Exited with code ${code}` });
+          clearTimeout(timeout);
+          if (code === 0 || code === 1) {
+            send({ type: 'file-status', index: i, status: 'done' });
+          } else {
+            const msg = (errOut || stdOut).trim() || `Exited with code ${code}`;
+            send({ type: 'file-status', index: i, status: 'error', error: msg });
+          }
           resolve();
         });
       });
     });
+  }
+
+  /* ── sequential mode ── */
+  async function runSequential() {
+    for (let i = 0; i < files.length; i++) {
+      if (clientClosed) break;
+      const remoteTmp = await uploadFile(i, files[i]);
+      if (!remoteTmp || clientClosed) continue;
+      await replayFile(i, remoteTmp);
+    }
+  }
+
+  /* ── concurrent mode: upload one-by-one, then replay all in parallel ── */
+  async function runConcurrent() {
+    // Phase 1 — upload all files sequentially (avoids bandwidth spike)
+    const remotePaths = [];
+    for (let i = 0; i < files.length; i++) {
+      if (clientClosed) { remotePaths.push(null); continue; }
+      const remoteTmp = await uploadFile(i, files[i]);
+      remotePaths.push(remoteTmp);
+    }
+
+    if (clientClosed) return;
+
+    // Phase 2 — launch all tcpreplay subprocesses simultaneously
+    await Promise.all(
+      remotePaths.map((remoteTmp, i) => {
+        if (!remoteTmp) return Promise.resolve();
+        return replayFile(i, remoteTmp);
+      })
+    );
+  }
+
+  /* ── run ── */
+  if (mode === 'concurrent') {
+    await runConcurrent();
+  } else {
+    await runSequential();
   }
 
   try { conn.destroy(); } catch (_) {}
