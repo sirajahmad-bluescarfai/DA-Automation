@@ -1055,7 +1055,9 @@
       overflow-y: auto;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
       animation: fadeIn 0.2s ease;
+      transition: width 0.2s ease;
     }
+    .replay-modal.wide-modal { width: 980px; }
     .modal-header {
       display: flex;
       align-items: center;
@@ -2051,6 +2053,58 @@
           </div>
         </div>
 
+        <div class="modal-divider"></div>
+
+        <!-- Database & API -->
+        <div class="modal-section">
+          <div class="modal-section-title">🗄️ Database &amp; API Validation</div>
+          <div class="form-group" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+            <input type="checkbox" id="rc-db-enabled" style="accent-color: var(--accent); cursor: pointer;" onchange="toggleDbFields()">
+            <label for="rc-db-enabled" style="font-weight: 600; cursor: pointer; color: var(--text-dim); user-select: none;">Enable DB &amp; API Validation</label>
+          </div>
+          <div id="rc-db-fields-container" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">DB SSH Host IP</label>
+              <input type="text" id="rc-db-ssh-ip" class="form-input" placeholder="192.168.1.30" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">DB SSH User / Pass</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="rc-db-ssh-user" class="form-input" placeholder="root" autocomplete="off" style="flex: 1; min-width: 0;">
+                <div class="pass-wrap" style="flex: 1.2; min-width: 0;">
+                  <input type="password" id="rc-db-ssh-pass" class="form-input" placeholder="••••••••">
+                  <button class="pass-eye" onclick="toggleReplayEye('rc-db-ssh-pass')" type="button" title="Show/hide">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">DB User / Pass</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="rc-db-user" class="form-input" placeholder="dbuser" autocomplete="off" style="flex: 1; min-width: 0;">
+                <div class="pass-wrap" style="flex: 1.2; min-width: 0;">
+                  <input type="password" id="rc-db-pass" class="form-input" placeholder="••••••••">
+                  <button class="pass-eye" onclick="toggleReplayEye('rc-db-pass')" type="button" title="Show/hide">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">DB Name / Table Name</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="rc-db-name" class="form-input" placeholder="testdb_1" autocomplete="off" style="flex: 1; min-width: 0;">
+                <input type="text" id="rc-db-table" class="form-input" placeholder="cdr" autocomplete="off" style="flex: 1; min-width: 0;">
+              </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">API Base URL</label>
+              <input type="text" id="rc-api-url" class="form-input" placeholder="http://192.168.1.20:3032" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
       </div><!-- /modal-body -->
       <div class="modal-footer">
         <div class="form-error-banner" id="rc-error">
@@ -2073,17 +2127,19 @@
         <div class="rc-prog-label" id="rc-pb-label">0 / 0 files</div>
       </div>
       <div class="rc-file-list" id="rc-file-list"></div>
+      <div id="rc-report-section" style="display:none; max-height:380px; overflow-y:auto; padding:10px 24px;"></div>
       <div class="rc-all-done" id="rc-all-done" style="display:none">
         <span style="font-size:20px">✅</span>
-        <div>All files replayed!</div>
+        <div id="rc-all-done-text">All files replayed!</div>
       </div>
       <div class="form-error-banner" id="rc-replay-error" style="margin:0 24px 16px">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <span id="rc-replay-error-text"></span>
       </div>
       <div class="modal-footer">
-        <div class="modal-footer-btns">
-          <button class="btn-modal-cancel" id="rc-done-btn" onclick="closeReplayModal()">Close</button>
+        <div class="modal-footer-btns" style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+          <button class="btn" id="rc-download-report-btn" style="display:none; font-size:11px;" onclick="downloadReportJson()">📥 Download JSON Report</button>
+          <button class="btn-modal-cancel" id="rc-done-btn" onclick="closeReplayModal()" style="margin-left:auto;">Close</button>
         </div>
       </div>
     </div>
@@ -2406,6 +2462,177 @@
 
   /* ── Replay Config Modal ── */
   let replayMode = 'sequential';
+  let lastReportData = null;
+
+  const CONFIG_KEYS = [
+    'rc-client-ip', 'rc-client-user', 'rc-client-pass', 'rc-client-service', 'rc-client-iface',
+    'rc-server-ip', 'rc-server-user', 'rc-server-pass', 'rc-server-service',
+    'rc-db-ssh-ip', 'rc-db-ssh-user', 'rc-db-ssh-pass',
+    'rc-db-user', 'rc-db-pass', 'rc-db-name', 'rc-db-table', 'rc-api-url'
+  ];
+
+  function saveReplayConfig() {
+    CONFIG_KEYS.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) localStorage.setItem(key, el.value);
+    });
+    localStorage.setItem('rc-db-enabled', document.getElementById('rc-db-enabled').checked);
+  }
+
+  function loadReplayConfig() {
+    CONFIG_KEYS.forEach(key => {
+      const el = document.getElementById(key);
+      if (el) el.value = localStorage.getItem(key) || '';
+    });
+    const dbEnabled = localStorage.getItem('rc-db-enabled') === 'true';
+    document.getElementById('rc-db-enabled').checked = dbEnabled;
+    toggleDbFields();
+  }
+
+  window.toggleDbFields = () => {
+    const enabled = document.getElementById('rc-db-enabled').checked;
+    const container = document.getElementById('rc-db-fields-container');
+    if (container) container.style.display = enabled ? 'block' : 'none';
+    const modalEl = document.querySelector('.replay-modal');
+    if (modalEl) modalEl.classList.toggle('wide-modal', enabled);
+  };
+
+  window.downloadReportJson = () => {
+    if (!lastReportData) return;
+    const blob = new Blob([JSON.stringify(lastReportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `da_automation_report_${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  function renderReportHtml(report) {
+    const reportSection = document.getElementById('rc-report-section');
+    if (!reportSection) return;
+    reportSection.style.display = 'block';
+
+    const statusColors = {
+      'PASS': 'var(--success)',
+      'PARTIAL PASS': 'var(--warn)',
+      'FAIL': 'var(--danger)'
+    };
+    const color = statusColors[report.status] || 'var(--text-muted)';
+
+    // Group API pass/fail counts
+    const apiCounts = {};
+    (report.apiValidation || []).forEach(item => {
+      if (!apiCounts[item.apiName]) apiCounts[item.apiName] = { pass: 0, fail: 0 };
+      if (item.ok) apiCounts[item.apiName].pass++;
+      else apiCounts[item.apiName].fail++;
+    });
+
+    const apiSummaryStr = Object.entries(apiCounts)
+      .map(([name, counts]) => `${counts.pass} ${name} API passed` + (counts.fail > 0 ? `, <span style="color:var(--danger)">${counts.fail} failed</span>` : ''))
+      .join(' → ');
+
+    const finalSummaryLine = `${report.totalPcapsReplayed} PCAPs replayed → ${report.newCdrsCount} new CDRs found` + (apiSummaryStr ? ' → ' + apiSummaryStr : '');
+
+    // List of failed CDRs
+    const failedCdrIds = Array.from(new Set(
+      (report.apiValidation || []).filter(item => !item.ok).map(item => item.cdrId)
+    ));
+
+    const failedCdrsStr = failedCdrIds.length > 0
+      ? `<div style="margin-top: 10px; padding: 8px 12px; background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.25); border-radius: 6px; font-size:11.5px; color: var(--danger)">
+          <strong>Failed CDR IDs:</strong> ${failedCdrIds.join(', ')}
+         </div>`
+      : '';
+
+    reportSection.innerHTML = `
+      <div style="display:flex; flex-direction:column; gap:14px; margin-top:8px;">
+        
+        <!-- Status card -->
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 16px; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">Validation Status</div>
+            <div style="font-size:14px; font-weight:700; color:${color}; margin-top:4px;">${report.status}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.5px;">Timestamp</div>
+            <div style="font-size:11px; color:var(--text-dim); margin-top:4px;">${new Date(report.timestamp).toLocaleString()}</div>
+          </div>
+        </div>
+
+        <!-- Summary Line -->
+        <div style="background:rgba(47,129,247,0.06); border:1px solid var(--border); border-radius:8px; padding:10px 12px; font-size:11.5px; font-family:'Courier New', monospace; line-height:1.4; word-break:break-all;">
+          ${finalSummaryLine}
+        </div>
+
+        ${failedCdrsStr}
+
+        <!-- Stats grid -->
+        <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:8px;">
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;">
+            <div style="font-size:9px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.3px;">PCAPs Selected</div>
+            <div style="font-size:18px; font-weight:700; color:var(--accent); margin-top:2px;">${report.totalPcapsSelected}</div>
+          </div>
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;">
+            <div style="font-size:9px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.3px;">New CDRs Found</div>
+            <div style="font-size:18px; font-weight:700; color:var(--success); margin-top:2px;">${report.newCdrsCount}</div>
+          </div>
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px; text-align:center;">
+            <div style="font-size:9px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:0.3px;">Replay Mode</div>
+            <div style="font-size:12px; font-weight:600; color:var(--text); margin-top:8px; text-transform:capitalize;">${report.replayMode}</div>
+          </div>
+        </div>
+
+        <!-- DB Details -->
+        <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
+          <div style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:4px;">Database Snapshots</div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+            <span style="color:var(--text-muted);">Max CDR ID Before Replay:</span>
+            <span style="font-weight:600; color:var(--text); font-family:monospace;">${report.lastCdrIdBefore}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+            <span style="color:var(--text-muted);">Max CDR ID After Replay:</span>
+            <span style="font-weight:600; color:var(--text); font-family:monospace;">${report.lastCdrIdAfter}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+            <span style="color:var(--text-muted);">CDR Count Before Replay:</span>
+            <span style="font-weight:600; color:var(--text); font-family:monospace;">${report.cdrCountBefore}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px;">
+            <span style="color:var(--text-muted);">CDR Count After Replay:</span>
+            <span style="font-weight:600; color:var(--text); font-family:monospace;">${report.cdrCountAfter}</span>
+          </div>
+        </div>
+
+        <!-- API Validation Log -->
+        ${report.apiValidation && report.apiValidation.length > 0 ? `
+          <div style="background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:10px 12px;">
+            <div style="font-size:10px; font-weight:700; color:var(--text-dim); text-transform:uppercase; margin-bottom:6px; border-bottom:1px solid var(--border); padding-bottom:4px;">API Validation Log</div>
+            <div style="max-height:120px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; padding-right:4px;">
+              ${report.apiValidation.map(item => {
+                const statusStyle = item.ok 
+                  ? 'background:rgba(63,185,80,0.15); color:var(--success)' 
+                  : 'background:rgba(248,81,73,0.12); color:var(--danger)';
+                return `
+                  <div style="display:flex; align-items:center; justify-content:space-between; font-size:10.5px; padding:4px 6px; border-radius:4px; background:var(--surface); border:1px solid var(--border);">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="font-weight:700; color:var(--accent); font-family:monospace;">CDR #${item.cdrId}</span>
+                      <span style="color:var(--text);">${item.apiName}</span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                      <span style="color:var(--text-muted); font-size:9.5px;">${item.ms}ms</span>
+                      <span style="font-size:9.5px; font-weight:700; padding:1px 5px; border-radius:4px; ${statusStyle}">${item.status}</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+      </div>
+    `;
+  }
 
   function openReplayModal(mode = 'sequential') {
     replayMode = mode;
@@ -2415,6 +2642,10 @@
     document.getElementById('rc-modal-title').textContent = title;
     document.getElementById('replay-modal-overlay').classList.add('open');
     document.getElementById('rc-error').classList.remove('visible');
+    
+    // Load configurations from localStorage
+    loadReplayConfig();
+    
     document.getElementById('rc-client-ip').focus();
   }
 
@@ -2427,6 +2658,11 @@
       document.getElementById('rc-modal-title').textContent = '▶ PCAP Replay Configuration';
       document.getElementById('rc-config-section').style.display = '';
       document.getElementById('rc-progress-section').style.display = 'none';
+      document.getElementById('rc-file-list').style.display = '';
+      document.getElementById('rc-report-section').style.display = 'none';
+      document.getElementById('rc-download-report-btn').style.display = 'none';
+      document.getElementById('rc-all-done').style.display = 'none';
+      lastReportData = null;
     }, 220);
   };
 
@@ -2450,12 +2686,21 @@
       'rc-client-ip','rc-client-user','rc-client-pass','rc-client-service','rc-client-iface',
       'rc-server-ip','rc-server-user','rc-server-pass','rc-server-service'
     ];
+    
+    const dbEnabled = document.getElementById('rc-db-enabled').checked;
+    const dbInputIds = dbEnabled ? [
+      'rc-db-ssh-ip', 'rc-db-ssh-user', 'rc-db-ssh-pass',
+      'rc-db-user', 'rc-db-pass', 'rc-db-name', 'rc-db-table', 'rc-api-url'
+    ] : [];
+
     let hasEmpty = false;
-    inputIds.forEach(id => {
+    inputIds.concat(dbInputIds).forEach(id => {
       const el = document.getElementById(id);
-      const empty = !el.value.trim();
-      el.classList.toggle('has-error', empty);
-      if (empty) hasEmpty = true;
+      if (el) {
+        const empty = !el.value.trim();
+        el.classList.toggle('has-error', empty);
+        if (empty) hasEmpty = true;
+      }
     });
 
     if (hasEmpty) {
@@ -2463,6 +2708,9 @@
       errBanner.classList.add('visible');
       return;
     }
+
+    // Save configurations to localStorage
+    saveReplayConfig();
 
     const client = {
       ip:            document.getElementById('rc-client-ip').value.trim(),
@@ -2477,6 +2725,22 @@
       password:    document.getElementById('rc-server-pass').value,
       serviceName: document.getElementById('rc-server-service').value.trim(),
     };
+
+    let dbConfig = null;
+    let apiUrl = null;
+
+    if (dbEnabled) {
+      dbConfig = {
+        sshHost:   document.getElementById('rc-db-ssh-ip').value.trim(),
+        sshUser:   document.getElementById('rc-db-ssh-user').value.trim(),
+        sshPass:   document.getElementById('rc-db-ssh-pass').value,
+        dbUser:    document.getElementById('rc-db-user').value.trim(),
+        dbPass:    document.getElementById('rc-db-pass').value,
+        dbName:    document.getElementById('rc-db-name').value.trim() || 'testdb_1',
+        tableName: document.getElementById('rc-db-table').value.trim() || 'cdr'
+      };
+      apiUrl = document.getElementById('rc-api-url').value.trim();
+    }
 
     submitBtn.disabled = true;
     submitBtn.innerHTML = '<div class="spinner" style="width:13px;height:13px;border-width:2px"></div> Checking services…';
@@ -2495,7 +2759,7 @@
         return;
       }
 
-      await doReplay([...selectedFiles], client, server, replayMode);
+      await doReplay([...selectedFiles], client, server, replayMode, dbConfig, apiUrl);
 
     } catch (_) {
       errText.textContent = 'Network error — could not reach the automation server.';
@@ -2506,15 +2770,19 @@
     }
   };
 
-  async function doReplay(files, client, server, mode = 'sequential') {
+  async function doReplay(files, client, server, mode = 'sequential', dbConfig = null, apiUrl = null) {
     // Switch modal to progress view
     const modeLabel = mode === 'concurrent' ? '⚡ Replaying Concurrently…' : '▶ Replaying PCAPs…';
     document.getElementById('rc-modal-title').textContent       = modeLabel;
     document.getElementById('rc-config-section').style.display  = 'none';
     document.getElementById('rc-progress-section').style.display = '';
+    document.getElementById('rc-file-list').style.display        = '';
+    document.getElementById('rc-report-section').style.display   = 'none';
+    document.getElementById('rc-download-report-btn').style.display = 'none';
     document.getElementById('rc-all-done').style.display        = 'none';
     document.getElementById('rc-replay-error').classList.remove('visible');
     document.getElementById('rc-done-btn').disabled             = true;
+    lastReportData = null;
 
     // Build file list UI
     const listEl = document.getElementById('rc-file-list');
@@ -2539,7 +2807,7 @@
       const r = await fetch('/api/replay/start-init', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files, client, server, mode })
+        body: JSON.stringify({ files, client, server, mode, dbConfig, apiUrl })
       });
       initData = await r.json();
     } catch (_) {
@@ -2574,26 +2842,79 @@
           iconEl.textContent = '✓'; badgeEl.textContent = 'Done'; badgeEl.className = 'rc-file-badge done';
           doneCount++;
           updateReplayProgress(doneCount, files.length);
-          itemEl.scrollIntoView({ block: 'nearest' });
+          if (itemEl) itemEl.scrollIntoView({ block: 'nearest' });
         } else if (status === 'error') {
           iconEl.textContent = '✗'; badgeEl.textContent = 'Error'; badgeEl.className = 'rc-file-badge error';
           if (errMsg) {
             const errDiv = document.createElement('div');
             errDiv.className = 'rc-file-error-msg';
             errDiv.textContent = errMsg;
-            itemEl.appendChild(errDiv);
+            if (itemEl) itemEl.appendChild(errDiv);
           }
           doneCount++;
           updateReplayProgress(doneCount, files.length);
-          itemEl.scrollIntoView({ block: 'nearest' });
+          if (itemEl) itemEl.scrollIntoView({ block: 'nearest' });
         }
+      }
+
+      // DB Status events
+      if (msg.type === 'db-status') {
+        const { status: dbStatus, error } = msg;
+        if (dbStatus === 'connecting') {
+          document.getElementById('rc-pb-label').textContent = 'Connecting to DB host...';
+        } else if (dbStatus === 'error') {
+          showReplayStreamError(error || 'DB SSH Connection failed.');
+        }
+      }
+
+      if (msg.type === 'db-snapshot-start') {
+        document.getElementById('rc-pb-label').textContent = 'Taking pre-replay DB snapshot...';
+      }
+
+      if (msg.type === 'db-snapshot-done') {
+        document.getElementById('rc-pb-label').textContent = 'DB Snapshot captured. Replaying PCAPs...';
+      }
+
+      // Polling events
+      if (msg.type === 'db-polling-start') {
+        document.getElementById('rc-pb-label').textContent = `Replay complete. Waiting for new CDRs in DB (expecting ${msg.expected})...`;
+      }
+
+      if (msg.type === 'db-polling-status') {
+        document.getElementById('rc-pb-label').textContent = `Polling DB for new CDRs (Attempt ${msg.attempt} / ${msg.maxAttempts})...`;
+      }
+
+      if (msg.type === 'db-polling-found') {
+        document.getElementById('rc-pb-label').textContent = `Polling DB... Found ${msg.count} new CDRs so far.`;
+      }
+
+      if (msg.type === 'db-polling-done') {
+        document.getElementById('rc-pb-label').textContent = `DB Polling finished. Found ${msg.count} new CDRs.`;
+      }
+
+      // API Validation events
+      if (msg.type === 'api-validation-start') {
+        document.getElementById('rc-pb-label').textContent = `Running API validation for ${msg.totalCdrs} new CDRs...`;
+      }
+
+      if (msg.type === 'api-validation-item-start') {
+        document.getElementById('rc-pb-label').textContent = `Validating CDR #${msg.cdrId} (${msg.apiName})...`;
+      }
+
+      // Final report
+      if (msg.type === 'validation-report') {
+        lastReportData = msg.report;
+        document.getElementById('rc-file-list').style.display = 'none';
+        document.getElementById('rc-download-report-btn').style.display = 'block';
+        renderReportHtml(msg.report);
       }
 
       if (msg.type === 'all-done') {
         es.close(); activeReplayEs = null;
-        document.getElementById('rc-modal-title').textContent = '✅ Replay Complete';
+        document.getElementById('rc-modal-title').textContent = lastReportData ? '✅ Validation Complete' : '✅ Replay Complete';
         document.getElementById('rc-pb-fill').classList.add('all-done');
         document.getElementById('rc-all-done').style.display  = 'flex';
+        document.getElementById('rc-all-done-text').textContent = lastReportData ? `Validation finished (Status: ${lastReportData.status})` : 'All files replayed!';
         document.getElementById('rc-done-btn').disabled       = false;
       }
 

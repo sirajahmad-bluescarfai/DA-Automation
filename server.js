@@ -151,17 +151,33 @@ app.post('/api/replay/check-services', async (req, res) => {
 const replayJobs = new Map();
 
 app.post('/api/replay/start-init', (req, res) => {
-  const { files, client, mode = 'sequential' } = req.body;
+  const { files, client, mode = 'sequential', dbConfig, apiUrl } = req.body;
   if (!Array.isArray(files) || files.length === 0)
     return res.status(400).json({ success: false, error: 'No files provided.' });
   if (!client?.ip || !client?.username || !client?.password || !client?.interfaceName)
     return res.status(400).json({ success: false, error: 'Client connection details required.' });
 
   const token = crypto.randomUUID();
-  replayJobs.set(token, { files, client, mode, createdAt: Date.now() });
+  replayJobs.set(token, { files, client, mode, dbConfig, apiUrl, createdAt: Date.now() });
   setTimeout(() => replayJobs.delete(token), 120000);
   res.json({ success: true, token });
 });
+
+function sshExec(conn, cmd) {
+  return new Promise((resolve, reject) => {
+    conn.exec(cmd, (err, stream) => {
+      if (err) return reject(err);
+      let stdout = '';
+      let stderr = '';
+      stream.on('data', data => stdout += data.toString());
+      stream.stderr.on('data', data => stderr += data.toString());
+      stream.on('close', (code) => {
+        if (code === 0) resolve(stdout);
+        else reject(new Error(stderr.trim() || `Exit code ${code}`));
+      });
+    });
+  });
+}
 
 app.get('/api/replay/start-stream/:token', async (req, res) => {
   const job = replayJobs.get(req.params.token);
@@ -174,12 +190,62 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
   res.flushHeaders();
 
   const send = (obj) => { try { res.write(`data: ${JSON.stringify(obj)}\n\n`); } catch (_) {} };
-  const { files, client, mode } = job;
+  const { files, client, mode, dbConfig, apiUrl } = job;
 
   const conn = new Client();
+  const dbConn = new Client();
   let clientClosed = false;
-  res.on('close', () => { clientClosed = true; try { conn.destroy(); } catch (_) {} });
 
+  res.on('close', () => {
+    clientClosed = true;
+    try { conn.destroy(); } catch (_) {}
+    try { dbConn.destroy(); } catch (_) {}
+  });
+
+  // Connect to DB SSH if configuration is provided
+  let dbConnected = false;
+  let lastCdrIdBefore = 0;
+  let cdrCountBefore = 0;
+
+  if (dbConfig && dbConfig.sshHost && dbConfig.sshUser && dbConfig.sshPass) {
+    send({ type: 'db-status', status: 'connecting' });
+    dbConnected = await new Promise((resolve) => {
+      const timer = setTimeout(() => { try { dbConn.destroy(); } catch (_) {} resolve(false); }, 10000);
+      dbConn.on('ready', () => { clearTimeout(timer); resolve(true); });
+      dbConn.on('error', () => { clearTimeout(timer); resolve(false); });
+      try {
+        dbConn.connect({
+          host: dbConfig.sshHost,
+          port: Number(dbConfig.sshPort || 22),
+          username: dbConfig.sshUser,
+          password: dbConfig.sshPass,
+          readyTimeout: 9000
+        });
+      } catch (_) { clearTimeout(timer); resolve(false); }
+    });
+
+    if (!dbConnected) {
+      send({ type: 'db-status', status: 'error', error: `Could not SSH into DB host (${dbConfig.sshHost}).` });
+    } else {
+      send({ type: 'db-status', status: 'connected' });
+      // Take pre-replay snapshot
+      try {
+        send({ type: 'db-snapshot-start' });
+        const dbPortStr = dbConfig.dbPort ? ` -P ${dbConfig.dbPort}` : '';
+        const snapCmd = `mysql -h "${dbConfig.dbHost || '127.0.0.1'}"${dbPortStr} -u "${dbConfig.dbUser}" -p"${dbConfig.dbPass}" "${dbConfig.dbName || 'testdb_1'}" -N -B -e "SELECT MAX(ID), COUNT(*) FROM cdr;"`;
+        const snapOut = await sshExec(dbConn, snapCmd);
+        const parts = snapOut.trim().split(/\s+/);
+        lastCdrIdBefore = parts[0] && parts[0] !== 'NULL' ? parseInt(parts[0], 10) : 0;
+        cdrCountBefore = parts[1] ? parseInt(parts[1], 10) : 0;
+        send({ type: 'db-snapshot-done', lastCdrIdBefore, cdrCountBefore });
+      } catch (err) {
+        send({ type: 'db-status', status: 'error', error: `Failed to take pre-replay snapshot: ${err.message}` });
+        dbConnected = false;
+      }
+    }
+  }
+
+  // SSH into replay client
   const connected = await new Promise((resolve) => {
     const timer = setTimeout(() => { try { conn.destroy(); } catch (_) {} resolve(false); }, 10000);
     conn.on('ready', () => { clearTimeout(timer); resolve(true); });
@@ -191,6 +257,7 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
 
   if (!connected) {
     send({ type: 'error', message: `Could not SSH into client (${client.ip}).` });
+    try { dbConn.destroy(); } catch (_) {}
     res.end();
     return;
   }
@@ -295,7 +362,7 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
     );
   }
 
-  /* ── run ── */
+  /* ── run replay ── */
   if (mode === 'concurrent') {
     await runConcurrent();
   } else {
@@ -303,6 +370,181 @@ app.get('/api/replay/start-stream/:token', async (req, res) => {
   }
 
   try { conn.destroy(); } catch (_) {}
+
+  // DB verification + API validation
+  let lastCdrIdAfter = lastCdrIdBefore;
+  let cdrCountAfter = cdrCountBefore;
+  let newCdrIds = [];
+  let apiValidationResults = [];
+  let finalStatus = 'PASS';
+
+  if (dbConnected && !clientClosed) {
+    send({ type: 'db-polling-start', expected: files.length });
+    let attempts = 0;
+    const maxAttempts = 18; // 90 seconds (18 * 5)
+    const pollInterval = 5000;
+
+    while (attempts < maxAttempts && !clientClosed) {
+      attempts++;
+      send({ type: 'db-polling-status', attempt: attempts, maxAttempts });
+
+      try {
+        const dbPortStr = dbConfig.dbPort ? ` -P ${dbConfig.dbPort}` : '';
+        const pollCmd = `mysql -h "${dbConfig.dbHost || '127.0.0.1'}"${dbPortStr} -u "${dbConfig.dbUser}" -p"${dbConfig.dbPass}" "${dbConfig.dbName || 'testdb_1'}" -N -B -e "SELECT ID FROM cdr WHERE ID > ${lastCdrIdBefore} ORDER BY ID;"`;
+        const pollOut = await sshExec(dbConn, pollCmd);
+        newCdrIds = pollOut.trim().split(/\s+/).filter(Boolean).map(x => parseInt(x, 10));
+
+        send({ type: 'db-polling-found', count: newCdrIds.length, ids: newCdrIds });
+
+        if (newCdrIds.length >= files.length) {
+          break;
+        }
+      } catch (err) {
+        send({ type: 'db-polling-error', error: err.message });
+      }
+
+      await new Promise(r => setTimeout(r, pollInterval));
+    }
+
+    // Capture post-replay final snapshot
+    try {
+      const dbPortStr = dbConfig.dbPort ? ` -P ${dbConfig.dbPort}` : '';
+      const snapCmd = `mysql -h "${dbConfig.dbHost || '127.0.0.1'}"${dbPortStr} -u "${dbConfig.dbUser}" -p"${dbConfig.dbPass}" "${dbConfig.dbName || 'testdb_1'}" -N -B -e "SELECT MAX(ID), COUNT(*) FROM cdr;"`;
+      const snapOut = await sshExec(dbConn, snapCmd);
+      const parts = snapOut.trim().split(/\s+/);
+      lastCdrIdAfter = parts[0] && parts[0] !== 'NULL' ? parseInt(parts[0], 10) : lastCdrIdBefore;
+      cdrCountAfter = parts[1] ? parseInt(parts[1], 10) : cdrCountBefore;
+    } catch (_) {}
+
+    send({
+      type: 'db-polling-done',
+      count: newCdrIds.length,
+      ids: newCdrIds,
+      lastCdrIdAfter,
+      cdrCountAfter
+    });
+
+    if (newCdrIds.length === 0) {
+      finalStatus = 'FAIL';
+    } else {
+      // Execute Automated API validation
+      send({ type: 'api-validation-start', totalCdrs: newCdrIds.length });
+
+      const validationApis = [
+        {
+          name: 'Get CDR',
+          method: 'GET',
+          getUrl: (base, id) => `${base}/callsByCDRID/?cdrId=${id}`
+        },
+        {
+          name: 'Get PCAP',
+          method: 'GET',
+          getUrl: (base, id) => `${base}/pcap?id=${id}&disable_rtp=true`
+        },
+        {
+          name: 'Get Audio',
+          method: 'GET',
+          getUrl: (base, id) => `${base}/audio/${id}`
+        }
+      ];
+
+      for (let i = 0; i < newCdrIds.length; i++) {
+        if (clientClosed) break;
+        const cdrId = newCdrIds[i];
+
+        for (let j = 0; j < validationApis.length; j++) {
+          if (clientClosed) break;
+          const api = validationApis[j];
+
+          send({ type: 'api-validation-item-start', cdrId, apiName: api.name });
+          const start = Date.now();
+          const targetUrl = api.getUrl(apiUrl.replace(/\/$/, ''), cdrId);
+
+          try {
+            const response = await fetch(targetUrl, {
+              method: api.method,
+              headers: { 'Content-Type': 'application/json' }
+            });
+            const ms = Date.now() - start;
+            let body = '';
+            try { body = await response.text(); } catch (_) {}
+
+            apiValidationResults.push({
+              cdrId,
+              apiName: api.name,
+              method: api.method,
+              url: targetUrl,
+              status: response.status,
+              ok: response.ok,
+              ms,
+              body: body.slice(0, 1000)
+            });
+
+            send({
+              type: 'api-validation-item-done',
+              cdrId,
+              apiName: api.name,
+              status: response.status,
+              ok: response.ok,
+              ms,
+              body: body.slice(0, 1000)
+            });
+          } catch (err) {
+            apiValidationResults.push({
+              cdrId,
+              apiName: api.name,
+              method: api.method,
+              url: targetUrl,
+              status: 0,
+              ok: false,
+              ms: Date.now() - start,
+              error: err.message
+            });
+
+            send({
+              type: 'api-validation-item-done',
+              cdrId,
+              apiName: api.name,
+              status: 0,
+              ok: false,
+              ms: Date.now() - start,
+              error: err.message
+            });
+          }
+        }
+      }
+
+      // Check final status
+      const anyApiFailed = apiValidationResults.some(r => !r.ok);
+      const matchedExpected = newCdrIds.length === files.length;
+      if (matchedExpected && !anyApiFailed) {
+        finalStatus = 'PASS';
+      } else {
+        finalStatus = 'PARTIAL PASS';
+      }
+    }
+
+    // Compile and send final report
+    const report = {
+      totalPcapsSelected: files.length,
+      totalPcapsReplayed: files.length,
+      replayMode: mode,
+      cdrCountBefore,
+      lastCdrIdBefore,
+      cdrCountAfter,
+      lastCdrIdAfter,
+      newCdrIds,
+      newCdrsCount: newCdrIds.length,
+      expectedCdrsCount: files.length,
+      apiValidation: apiValidationResults,
+      status: finalStatus,
+      timestamp: new Date().toISOString()
+    };
+
+    send({ type: 'validation-report', report });
+  }
+
+  try { dbConn.destroy(); } catch (_) {}
   if (!clientClosed) { send({ type: 'all-done' }); res.end(); }
 });
 
