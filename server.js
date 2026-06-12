@@ -7,7 +7,7 @@ const multer  = require('multer');
 const { Client } = require('ssh2');
 
 const app      = express();
-const PORT     = 3030;
+const PORT     = 3032;
 const PCAP_DIR = path.join(__dirname, 'PCAPs');
 const upload   = multer({ dest: os.tmpdir() });
 
@@ -55,8 +55,10 @@ function buildTree(dirPath) {
 }
 
 app.get('/api/files', (req, res) => {
-  try { res.json(buildTree(PCAP_DIR)); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  setImmediate(() => {
+    try { res.json(buildTree(PCAP_DIR)); }
+    catch (err) { res.status(500).json({ error: err.message }); }
+  });
 });
 
 /* ── PCAP replay ── */
@@ -592,10 +594,13 @@ app.get('/api/test/run-stream/:token', async (req, res) => {
 
     const start = Date.now();
     try {
+      const isPost = api.method !== 'GET' && api.method !== 'HEAD';
       const resp = await fetch(fullUrl, {
         method: api.method,
         headers: { 'Content-Type': 'application/json', ...(api.headers || {}) },
-        ...(api.body ? { body: JSON.stringify(api.body) } : {})
+        ...(isPost && api.bodyParams && api.bodyParams.length > 0
+          ? { body: JSON.stringify(Object.fromEntries(api.bodyParams.map(p => [p.name, p.value]))) }
+          : {})
       });
       const ms = Date.now() - start;
       let body = '';

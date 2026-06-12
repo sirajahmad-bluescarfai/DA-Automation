@@ -1405,7 +1405,21 @@
     .api-result-progress-fill.done { background: var(--success); }
     .api-result-progress-fill.err  { background: var(--danger); }
 
-    /* download report btn */
+    /* ── API alert banner ── */
+    .api-alert-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      animation: fadeIn 0.2s ease;
+    }
+    .api-alert-banner.error   { background: rgba(248,81,73,0.12);  color: var(--danger);  border-color: rgba(248,81,73,0.3); }
+    .api-alert-banner.warn    { background: rgba(210,153,34,0.12); color: var(--warn);    border-color: rgba(210,153,34,0.3); }
+    .api-alert-banner.success { background: rgba(63,185,80,0.1);   color: var(--success); border-color: rgba(63,185,80,0.25); }
     .btn-download-report {
       width: 100%;
       background: var(--surface2);
@@ -1843,6 +1857,7 @@
             <div style="flex:0 0 100px">
               <label class="api-config-label">Type</label>
               <select id="api-auth-type" class="api-config-input" onchange="onAuthTypeChange()">
+                <option value="datoken">DA Token (x-access-token)</option>
                 <option value="bearer">Bearer</option>
                 <option value="basic">Basic</option>
                 <option value="apikey">API Key</option>
@@ -1926,6 +1941,11 @@
 
     <!-- Right: Selected + Actions + Results -->
     <div class="sidebar" style="width:340px">
+      <!-- Alert banner -->
+      <div class="api-alert-banner" id="api-alert-banner" style="display:none">
+        <span id="api-alert-text"></span>
+        <button onclick="document.getElementById('api-alert-banner').style.display='none'" style="background:none;border:none;cursor:pointer;color:inherit;font-size:14px;padding:0 0 0 8px">✕</button>
+      </div>
       <div class="sb-header">
         <div class="sb-header-top">
           <span class="sb-title">Selected APIs</span>
@@ -2173,7 +2193,7 @@
     row.dataset.type = 'dir';
     row.dataset.nodeId = id;
     row.innerHTML = `
-      <span class="t-toggle open" data-toggle="${id}">▶</span>
+      <span class="t-toggle" data-toggle="${id}">▶</span>
       <input type="checkbox" class="t-check" data-node-id="${id}" id="${id}">
       <label class="t-icon" for="${id}" style="cursor:default;pointer-events:none">${icon}</label>
       <label class="t-name is-dir" for="${id}" style="cursor:default;pointer-events:none">${esc(node.name)}</label>
@@ -2183,6 +2203,7 @@
     const children = document.createElement('div');
     children.className = 't-children';
     children.id = childId;
+    children.style.display = 'none';
 
     wrap.appendChild(row);
     wrap.appendChild(children);
@@ -3104,8 +3125,43 @@
   const STATIC_APIS = [
     {
       group: 'Auth',
-      icon: '🔐',
-      apis: []  // will be populated in a future phase
+      icon: '&#128274;',
+      apis: [
+        {
+          id: 'auth-login',
+          label: 'Login',
+          method: 'POST',
+          path: '/auth/login',
+          params: [],
+          bodyParams: [
+            { name: 'username', value: '' },
+            { name: 'password', value: '' }
+          ]
+        },
+        {
+          id: 'auth-register',
+          label: 'Register User',
+          method: 'POST',
+          path: '/auth/register',
+          params: [],
+          bodyParams: [
+            { name: 'username', value: '' },
+            { name: 'name',     value: '' },
+            { name: 'password', value: '' }
+          ]
+        },
+        {
+          id: 'auth-change-password',
+          label: 'Change Password',
+          method: 'POST',
+          path: '/auth/changePassword',
+          params: [],
+          bodyParams: [
+            { name: 'password',    value: '' },
+            { name: 'newpassword', value: '' }
+          ]
+        }
+      ]
     },
     {
       group: 'CDR',
@@ -3263,8 +3319,124 @@
       ]
     },
     {
+      group: 'Video Calls',
+      icon: '&#127909;',
+      apis: [
+        {
+          id: 'video-get-cdrs',
+          label: 'Get Video CDRs',
+          method: 'GET',
+          path: '/getVideoCdrs?start_time={{start_time}}&end_time={{end_time}}&msisdn={{msisdn}}&cellId={{cellId}}&cdrId={{cdrId}}&callId={{callId}}',
+          params: [
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' },
+            { name: 'msisdn',     value: '' },
+            { name: 'cellId',     value: '' },
+            { name: 'cdrId',      value: '' },
+            { name: 'callId',     value: '' }
+          ]
+        },
+        {
+          id: 'video-by-cdrid',
+          label: 'Get Video by CDR ID',
+          method: 'GET',
+          path: '/videoByCdrId?cdrId={{cdrId}}&writeToPath={{writeToPath}}',
+          params: [
+            { name: 'cdrId',        value: '' },
+            { name: 'writeToPath',  value: '' }
+          ]
+        },
+        {
+          id: 'video-by-callid',
+          label: 'Get Video by Call ID',
+          method: 'GET',
+          path: '/videoByCallId?callId={{callId}}&writeToPath={{writeToPath}}',
+          params: [
+            { name: 'callId',       value: '' },
+            { name: 'writeToPath',  value: '' }
+          ]
+        }
+      ]
+    },
+    {
+      group: 'Messages',
+      icon: '&#128172;',
+      apis: [
+        {
+          id: 'msg-list-offset',
+          label: 'List MDRs (offset/size)',
+          method: 'GET',
+          path: '/messagesByOffsetSize?offset={{offset}}&size={{size}}',
+          params: [
+            { name: 'offset', value: '' },
+            { name: 'size',   value: '' }
+          ]
+        },
+        {
+          id: 'msg-get-by-mdrid',
+          label: 'Get MDR by ID',
+          method: 'GET',
+          path: '/messageByID?mdrId={{mdrId}}',
+          params: [{ name: 'mdrId', value: '' }]
+        },
+        {
+          id: 'msg-get-by-time',
+          label: 'Get MDRs by Time',
+          method: 'GET',
+          path: '/messagesByTime?start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'msg-get-by-msisdn',
+          label: 'Get MDRs by MSISDN',
+          method: 'GET',
+          path: '/messagesByMsisdn?msisdn={{msisdn}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'msisdn',     value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'msg-get-by-cellid',
+          label: 'Get MDRs by Cell-ID',
+          method: 'GET',
+          path: '/messagesByCellID?searchId={{searchId}}&start_time={{start_time}}&end_time={{end_time}}',
+          params: [
+            { name: 'searchId',   value: '' },
+            { name: 'start_time', value: '' },
+            { name: 'end_time',   value: '' }
+          ]
+        },
+        {
+          id: 'msg-get-by-callid',
+          label: 'Get MDRs by Call-ID',
+          method: 'GET',
+          path: '/messagesByCallID?callId={{callId}}',
+          params: [{ name: 'callId', value: '' }]
+        },
+        {
+          id: 'msg-get-last-id',
+          label: 'Get Last MDR ID',
+          method: 'GET',
+          path: '/lastMdrId?time={{time}}',
+          params: [{ name: 'time', value: '' }]
+        },
+        {
+          id: 'msg-get-pcap',
+          label: 'Get Message PCAP by MDR ID',
+          method: 'GET',
+          path: '/messagesPcapByMDRID?mdrId={{mdrId}}',
+          params: [{ name: 'mdrId', value: '' }]
+        }
+      ]
+    },
+    {
       group: 'Data by MSISDN',
-      icon: '📦',
+      icon: '&#128230;',
       apis: [
         {
           id: 'data-msisdn-post',
@@ -3349,16 +3521,16 @@
       const gNode = document.createElement('div');
       gNode.className = 't-node';
 
-      const nid = 'apig-' + group.group.toLowerCase();
+      const nid = 'apig-' + group.group.toLowerCase().replace(/\s+/g, '-');
       gNode.innerHTML = `
         <div class="t-row" data-type="dir" data-node-id="${nid}">
-          <span class="t-toggle open" data-toggle="${nid}">▶</span>
+          <span class="t-toggle" data-toggle="${nid}">▶</span>
           <input type="checkbox" class="t-check" data-api-group="${nid}">
           <span class="t-icon">${group.icon}</span>
           <span class="t-name is-dir">${esc(group.group)}</span>
           <span class="t-badge">${visibleApis.length}</span>
         </div>
-        <div class="t-children" id="ch-${nid}">
+        <div class="t-children" id="ch-${nid}" style="display:none">
         </div>
       `;
       root.appendChild(gNode);
@@ -3391,6 +3563,19 @@
           </div>
         `).join('');
 
+        const bodyParamInputs = (api.bodyParams || []).map(p => `
+          <div class="api-param-row">
+            <span class="api-param-label" style="color:var(--warn)">body.${esc(p.name)}:</span>
+            <input type="${p.name === 'password' || p.name === 'newpassword' ? 'password' : 'text'}"
+              class="api-param-input"
+              data-api-id="${esc(api.id)}"
+              data-param="body_${esc(p.name)}"
+              value="${esc(vals['body_'+p.name] || '')}"
+              placeholder="${esc(p.name)}"
+              onclick="event.stopPropagation()">
+          </div>
+        `).join('');
+
         const deleteBtn = api.custom
           ? `<button class="t-badge" style="cursor:pointer;background:transparent;border:none;color:var(--danger)" onclick="deleteCustomApi('${esc(api.id)}',event)" title="Delete">✕</button>`
           : '';
@@ -3407,6 +3592,7 @@
             ${deleteBtn}
           </div>
           ${paramInputs}
+          ${bodyParamInputs}
         `;
         childrenEl.appendChild(aNode);
       });
@@ -3595,9 +3781,10 @@
 
   window.onAuthTypeChange = () => {
     const type = document.getElementById('api-auth-type').value;
-    document.getElementById('api-auth-token-wrap').style.display  = type === 'bearer' ? 'flex' : 'none';
+    document.getElementById('api-auth-token-wrap').style.display  = (type === 'bearer' || type === 'datoken') ? 'flex' : 'none';
     document.getElementById('api-auth-basic-wrap').style.display  = type === 'basic'  ? 'block' : 'none';
     document.getElementById('api-auth-apikey-wrap').style.display = type === 'apikey' ? 'block' : 'none';
+    document.getElementById('api-auth-token').placeholder = type === 'datoken' ? 'Paste access token…' : 'Enter token…';
   };
 
   window.toggleAuthEye     = () => { const i = document.getElementById('api-auth-token');   i.type = i.type === 'password' ? 'text' : 'password'; };
@@ -3608,6 +3795,11 @@
     if (!document.getElementById('api-auth-enabled').checked) return {};
     const type = document.getElementById('api-auth-type').value;
 
+    if (type === 'datoken') {
+      const token = document.getElementById('api-auth-token').value.trim();
+      if (!token) return {};
+      return { 'x-access-token': token };
+    }
     if (type === 'bearer') {
       const token = document.getElementById('api-auth-token').value.trim();
       if (!token) return {};
@@ -3628,6 +3820,37 @@
     return {};
   }
 
+  /* ── auto-populate token from login response ── */
+  function tryAutoSetToken(apiId, responseBody) {
+    if (apiId !== 'auth-login') return;
+    try {
+      const data = JSON.parse(responseBody);
+      if (data.auth && data.accessToken) {
+        document.getElementById('api-auth-token').value   = data.accessToken;
+        document.getElementById('api-auth-enabled').checked = true;
+        document.getElementById('api-auth-type').value    = 'datoken';
+        document.getElementById('api-auth-panel').style.display = 'flex';
+        document.getElementById('api-auth-panel').style.flexDirection = 'column';
+        onAuthTypeChange();
+        showApiAlert('success', '&#10003; Logged in — access token auto-applied to all API calls.');
+      }
+    } catch (_) {}
+  }
+
+  /* ── Alert banner ── */
+  let apiAlertTimer;
+  function showApiAlert(type, msg) {
+    const banner = document.getElementById('api-alert-banner');
+    const text   = document.getElementById('api-alert-text');
+    banner.className = 'api-alert-banner ' + type;
+    text.innerHTML   = msg;
+    banner.style.display = 'flex';
+    clearTimeout(apiAlertTimer);
+    if (type !== 'error') {
+      apiAlertTimer = setTimeout(() => { banner.style.display = 'none'; }, 6000);
+    }
+  }
+
   /* ── Run Tests ── */
   function buildRunPayload() {
     const baseUrl    = document.getElementById('api-base-url').value.trim();
@@ -3639,11 +3862,11 @@
       const vals = apiParamValues[id] || {};
       return {
         ...api,
-        headers: authHeader,
-        params: (api.params || []).map(p => ({ ...p, value: vals[p.name] || p.value || '' }))
+        headers:    authHeader,
+        params:     (api.params     || []).map(p => ({ ...p, value: vals[p.name]       || p.value || '' })),
+        bodyParams: (api.bodyParams || []).map(p => ({ ...p, value: vals['body_'+p.name] || p.value || '' }))
       };
     }).filter(Boolean);
-
     return { baseUrl, apis };
   }
 
@@ -3716,6 +3939,36 @@
       r.body     = msg.body   || null;
       r.error    = msg.error  || null;
       r.url      = msg.url;
+
+      // auto-set token if this was a login call
+      if (msg.ok && msg.body) tryAutoSetToken(r.id, msg.body);
+
+      // 401 error — show prominent alert
+      if (msg.status === 401) {
+        let errMsg = '&#128274; Authentication failed (401).';
+        try {
+          const parsed = JSON.parse(msg.body);
+          if (parsed.err?.name === 'TokenExpiredError')
+            errMsg = '&#9201; Token expired — run Login again to get a new token.';
+          else if (parsed.stderr?.includes('No token'))
+            errMsg = '&#128274; No token provided — enable Auth and run Login first.';
+          else if (parsed.stderr)
+            errMsg = '&#128274; ' + parsed.stderr;
+        } catch (_) {}
+        showApiAlert('error', errMsg);
+      }
+      // 400 — show stderr from response
+      if (msg.status === 400) {
+        try {
+          const parsed = JSON.parse(msg.body);
+          if (parsed.stderr) showApiAlert('warn', '&#9888; ' + parsed.stderr);
+        } catch (_) {}
+      }
+      // network error
+      if (msg.status === 0 && msg.error) {
+        showApiAlert('error', '&#9888; Cannot reach server — check Base URL. ' + msg.error);
+      }
+
       renderApiResults();
     }
     if (msg.type === 'all-done') {
